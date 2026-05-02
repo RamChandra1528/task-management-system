@@ -1,0 +1,105 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color: #121a33;
+    background:
+      radial-gradient(circle at top, rgba(124, 58, 237, 0.1), transparent 30%),
+      radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.12), transparent 20%),
+      linear-gradient(180deg, #ffffff 0%, #fbfaff 100%);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    @apply border-line;
+  }
+
+  body {
+    @apply min-h-screen bg-shell font-sans text-ink;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    @apply outline-none;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply rounded-[28px] border border-white/70 bg-white/80 shadow-card backdrop-blur-xl;
+  }
+
+  .panel-card {
+    @apply rounded-[24px] border border-brand-100/80 bg-white shadow-card;
+  }
+
+  .ghost-ring {
+    @apply ring-1 ring-brand-100/70;
+  }
+
+  .soft-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .soft-scrollbar::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-brand-100;
+  }
+
+  .soft-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar-shell {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .sidebar-logo,
+  .sidebar-nav,
+  .sidebar-footer {
+    flex-shrink: 0;
+  }
+
+  @media (min-width: 1024px) and (max-height: 820px) {
+    .sidebar-logo {
+      padding-top: 1.25rem;
+      padding-bottom: 1.25rem;
+    }
+
+    .sidebar-nav-link {
+      border-radius: 1rem;
+      padding-top: 0.75rem;
+      padding-bottom: 0.75rem;
+    }
+
+    .sidebar-footer {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+
+    .sidebar-upgrade {
+      padding: 1rem;
+    }
+
+    .sidebar-upgrade p {
+      display: none;
+    }
+
+    .sidebar-upgrade button {
+      margin-top: 0.75rem;
+    }
+  }
+}
