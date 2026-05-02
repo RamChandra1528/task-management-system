@@ -40,7 +40,6 @@ import { eventApi, projectApi, userApi } from "../lib/api.js";
 import { cn, formatDate, formatTime, statusLabel } from "../lib/utils.js";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const displayMonth = new Date(2025, 4, 1);
 
 function toDate(value) {
   return typeof value === "string" ? parseISO(value) : value;
@@ -67,6 +66,7 @@ function durationLabel(event) {
 export default function CalendarPage() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState("");
+  const [displayMonth, setDisplayMonth] = useState(new Date());
   const [eventModal, setEventModal] = useState({ mode: null, event: null });
 
   const { data: events = [], isLoading } = useQuery({
@@ -102,17 +102,17 @@ export default function CalendarPage() {
     }
   });
 
-  const monthDays = useMemo(() => getMonthDays(displayMonth), []);
+  const monthDays = useMemo(() => getMonthDays(displayMonth), [displayMonth]);
   const selectedEvent =
     events.find((event) => event._id === selectedId) ||
-    events.find((event) => isSameDay(toDate(event.start), new Date(2025, 4, 12))) ||
+    events.find((event) => isSameDay(toDate(event.start), new Date())) ||
     events[0] ||
     null;
 
   const upcomingEvents = useMemo(
     () =>
       events
-        .filter((event) => toDate(event.start) >= new Date(2025, 4, 12))
+        .filter((event) => toDate(event.start) >= new Date())
         .slice(0, 4),
     [events]
   );

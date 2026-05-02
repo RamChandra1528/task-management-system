@@ -6,7 +6,7 @@ import {
   parseISO
 } from "date-fns";
 
-export const referenceDate = new Date("2025-05-12T14:30:00.000Z");
+export const referenceDate = new Date();
 
 export function cn(...classes) {
   return classes.filter(Boolean).join(" ");

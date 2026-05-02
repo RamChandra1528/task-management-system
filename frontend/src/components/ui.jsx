@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -365,23 +366,58 @@ export function Modal({
     lg: "max-w-4xl"
   };
 
+  const backdropRef = useRef(null);
+
+  // Handle keyboard and click-outside
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    const handleBackdropClick = (event) => {
+      if (event.target === backdropRef.current) {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("click", handleBackdropClick);
+
+    // Prevent scrolling when modal is open
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("click", handleBackdropClick);
+      document.body.style.overflow = "unset";
+    };
+  }, [open, onClose]);
+
   return (
     <AnimatePresence>
       {open ? (
         <motion.div
+          ref={backdropRef}
           className="fixed inset-0 z-50 flex items-center justify-center bg-ink/35 p-4 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
         >
           <motion.div
             initial={{ opacity: 0, y: 24, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            transition={{ duration: 0.2 }}
             className={cn(
               "w-full rounded-[32px] border border-white/80 bg-white p-6 shadow-2xl shadow-brand-500/15",
               sizes[size]
             )}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -390,12 +426,15 @@ export function Modal({
               </div>
               <button
                 onClick={onClose}
-                className="rounded-2xl border border-brand-100 p-2 text-soft transition hover:text-ink"
+                className="rounded-2xl border border-brand-100 p-2 text-soft transition hover:text-ink hover:border-brand-200"
+                title="Close (ESC)"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="mt-6">{children}</div>
+            <div className="mt-6 max-h-[calc(100vh-200px)] overflow-y-auto soft-scrollbar">
+              {children}
+            </div>
           </motion.div>
         </motion.div>
       ) : null}

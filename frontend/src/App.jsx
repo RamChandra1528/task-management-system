@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-route
 
 import AppShell from "./components/layout/AppShell.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
+import { ModalProvider } from "./context/ModalContext.jsx";
 import CalendarPage from "./pages/CalendarPage.jsx";
 import FilesPage from "./pages/FilesPage.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
@@ -99,7 +100,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <ModalProvider>
+          <AppRoutes />
+        </ModalProvider>
       </AuthProvider>
     </BrowserRouter>
   );

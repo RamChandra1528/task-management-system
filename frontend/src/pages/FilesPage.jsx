@@ -35,6 +35,7 @@ import {
   SecondaryButton,
   StatCard
 } from "../components/ui.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 import { fileApi, projectApi, userApi } from "../lib/api.js";
 import { cn, formatDate, relativeToReference } from "../lib/utils.js";
 
@@ -135,6 +136,7 @@ export default function FilesPage() {
     }
   });
 
+  const { user } = useAuth();
   const visibleFiles = useMemo(() => {
     return files.filter((file) => {
       const haystack = `${file.name} ${file.project?.name} ${file.uploadedBy?.name}`;
@@ -143,7 +145,7 @@ export default function FilesPage() {
         activeTab === "All Files" ||
         activeTab === "Recent" ||
         (activeTab === "Shared with me" && file.sharedWith?.length) ||
-        (activeTab === "My Files" && file.uploadedBy?.name === "Emma Johnson") ||
+        (activeTab === "My Files" && file.uploadedBy?._id === user?._id) ||
         (activeTab === "Trash" && false);
       return matchesSearch && matchesTab;
     });
@@ -151,7 +153,6 @@ export default function FilesPage() {
 
   const selectedFile =
     files.find((file) => file._id === selectedId) ||
-    files.find((file) => file.name === "Project Brief.pdf") ||
     files.find((file) => file.kind === "file") ||
     files[0] ||
     null;
