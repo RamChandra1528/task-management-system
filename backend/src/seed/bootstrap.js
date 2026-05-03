@@ -19,7 +19,14 @@ const projectRoot = path.resolve(__dirname, "../../..");
 const seedUploadDir = path.resolve(__dirname, "../../uploads/seed");
 
 function ensureDirectory(target) {
-  fs.mkdirSync(target, { recursive: true });
+  try {
+    fs.mkdirSync(target, { recursive: true });
+  } catch (error) {
+    if (error.code !== "EEXIST" && error.code !== "EACCES" && error.code !== "EROFS") {
+      throw error;
+    }
+    // Silently continue if directory already exists or filesystem is read-only
+  }
 }
 
 function createPdf(title, body) {
@@ -64,55 +71,63 @@ function ensureSeedFiles() {
     userFlow: path.join(seedUploadDir, "User-Flow.png")
   };
 
-  if (!fs.existsSync(assets.projectBrief)) {
-    fs.writeFileSync(
-      assets.projectBrief,
-      createPdf(
-        "Project Brief",
-        "Aurora website redesign scope, milestones, and deliverables."
-      )
-    );
-  }
-
-  if (!fs.existsSync(assets.brandGuidelines)) {
-    fs.writeFileSync(
-      assets.brandGuidelines,
-      createPdf(
-        "Brand Guidelines",
-        "Palette, typography, spacing, and voice guidance for the campaign."
-      )
-    );
-  }
-
-  if (!fs.existsSync(assets.sprintPlan)) {
-    fs.writeFileSync(
-      assets.sprintPlan,
-      "Task,Owner,Due Date\nSprint planning,James Park,2025-05-22\nSprint review,Emma Johnson,2025-05-21\n"
-    );
-  }
-
-  if (!fs.existsSync(assets.designTokens)) {
-    fs.writeFileSync(
-      assets.designTokens,
-      "TaskPro design tokens export for the Aurora UI system."
-    );
-  }
-
-  if (!fs.existsSync(assets.presentation)) {
-    fs.writeFileSync(
-      assets.presentation,
-      "TaskPro quarterly presentation deck for stakeholder review."
-    );
-  }
-
-  if (!fs.existsSync(assets.userFlow)) {
-    const source = path.join(projectRoot, "Dashboard.png");
-    if (fs.existsSync(source)) {
-      fs.copyFileSync(source, assets.userFlow);
-    } else {
-      fs.writeFileSync(assets.userFlow, "");
+  const writeFile = (filePath, content) => {
+    try {
+      if (!fs.existsSync(filePath)) {
+        fs.writeFileSync(filePath, content);
+      }
+    } catch (error) {
+      if (error.code !== "EACCES" && error.code !== "EROFS") {
+        console.warn(`Could not write ${filePath}:`, error.message);
+      }
     }
-  }
+  };
+
+  const copyFile = (source, dest) => {
+    try {
+      if (fs.existsSync(source) && !fs.existsSync(dest)) {
+        fs.copyFileSync(source, dest);
+      }
+    } catch (error) {
+      if (error.code !== "EACCES" && error.code !== "EROFS") {
+        console.warn(`Could not copy ${source} to ${dest}:`, error.message);
+      }
+    }
+  };
+
+  writeFile(
+    assets.projectBrief,
+    createPdf(
+      "Project Brief",
+      "Aurora website redesign scope, milestones, and deliverables."
+    )
+  );
+
+  writeFile(
+    assets.brandGuidelines,
+    createPdf(
+      "Brand Guidelines",
+      "Palette, typography, spacing, and voice guidance for the campaign."
+    )
+  );
+
+  writeFile(
+    assets.sprintPlan,
+    "Task,Owner,Due Date\nSprint planning,James Park,2025-05-22\nSprint review,Emma Johnson,2025-05-21\n"
+  );
+
+  writeFile(
+    assets.designTokens,
+    "TaskPro design tokens export for the Aurora UI system."
+  );
+
+  writeFile(
+    assets.presentation,
+    "TaskPro quarterly presentation deck for stakeholder review."
+  );
+
+  const source = path.join(projectRoot, "Dashboard.png");
+  copyFile(source, assets.userFlow);
 
   return assets;
 }

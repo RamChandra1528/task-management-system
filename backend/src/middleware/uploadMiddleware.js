@@ -7,7 +7,17 @@ import multer from "multer";
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const uploadDir = path.resolve(__dirname, "../../uploads/runtime");
 
-fs.mkdirSync(uploadDir, { recursive: true });
+// Try to create upload directory, but don't fail if filesystem is read-only (Vercel)
+try {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log("✓ Upload directory created:", uploadDir);
+} catch (error) {
+  if (error.code === "EACCES" || error.code === "EROFS") {
+    console.warn("⚠️ Upload directory is read-only (Vercel serverless). Uploads may not persist.");
+  } else {
+    console.error("❌ Failed to create upload directory:", error.message);
+  }
+}
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
