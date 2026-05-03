@@ -38,20 +38,42 @@ export function createApp() {
   });
 
   const allowedOrigins = process.env.CLIENT_URL?.split(",").map((origin) => origin.trim()) || [];
+  
+  // Add common development and production domains
+  const productionDomains = [
+    /^https:\/\/.*\.netlify\.app$/,      // Netlify deployments
+    /^https:\/\/.*\.vercel\.app$/,       // Vercel deployments
+    /^https:\/\/.*\.github\.dev$/,       // GitHub Codespaces
+    /^http:\/\/(localhost|127\.0\.0\.1):\d+$/ // Local development
+  ];
+
   app.use(
     cors({
       origin(origin, callback) {
-        if (
-          !origin ||
-          allowedOrigins.includes(origin) ||
-          /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)
-        ) {
+        if (!origin) {
+          // Allow requests with no origin (like mobile apps)
           callback(null, true);
           return;
         }
 
+        // Check if origin is in allowed list
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        // Check if origin matches production patterns
+        if (productionDomains.some(pattern => pattern.test(origin))) {
+          callback(null, true);
+          return;
+        }
+
+        console.warn(`CORS blocked: ${origin}`);
         callback(new Error("Not allowed by CORS"));
-      }
+      },
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"]
     })
   );
   app.use(express.json({ limit: "8mb" }));
