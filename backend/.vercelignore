@@ -1,0 +1,11 @@
+node_modules
+.git
+.env
+.env.local
+.DS_Store
+npm-debug.log
+*.log
+uploads
+docs
+ADMIN_LOGIN_GUIDE.md
+BACKEND_DEPLOYMENT_VERIFICATION.md
