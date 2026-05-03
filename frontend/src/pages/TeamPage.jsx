@@ -48,6 +48,8 @@ export default function TeamPage() {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [inviting, setInviting] = useState(false);
+  const [creatingTeam, setCreatingTeam] = useState(false);
+  const [teamForm, setTeamForm] = useState({ name: "", description: "", color: "#7c3aed" });
   const [memberModal, setMemberModal] = useState({ mode: null, member: null });
 
   const { data: users = [], isLoading } = useQuery({
@@ -85,6 +87,15 @@ export default function TeamPage() {
     }
   });
 
+  const createTeamMutation = useMutation({
+    mutationFn: teamApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      setCreatingTeam(false);
+      setTeamForm({ name: "", description: "", color: "#7c3aed" });
+    }
+  });
+
   const visibleUsers = useMemo(() => {
     return users.filter((user) => {
       const matchesTab = activeTab === "all" || user.department === activeTab;
@@ -112,10 +123,16 @@ export default function TeamPage() {
               Filter
             </SecondaryButton>
             {isAdmin ? (
-              <PrimaryButton onClick={() => setInviting(true)}>
-                <Plus className="h-4 w-4" />
-                Invite Member
-              </PrimaryButton>
+              <>
+                <PrimaryButton onClick={() => setCreatingTeam(true)}>
+                  <Plus className="h-4 w-4" />
+                  Create Team
+                </PrimaryButton>
+                <PrimaryButton onClick={() => setInviting(true)}>
+                  <Plus className="h-4 w-4" />
+                  Invite Member
+                </PrimaryButton>
+              </>
             ) : null}
           </div>
         }
@@ -271,6 +288,64 @@ export default function TeamPage() {
         loading={createUserMutation.isPending}
         teams={teams}
       />
+
+      {/* Create Team Modal */}
+      <Modal
+        open={creatingTeam}
+        onClose={() => setCreatingTeam(false)}
+        title="Create Team"
+        subtitle="Create a new team for your workspace"
+      >
+        <div className="space-y-5">
+          <Field label="Team Name">
+            <Input
+              value={teamForm.name}
+              onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })}
+              placeholder="e.g., Frontend Team"
+            />
+          </Field>
+
+          <Field label="Description">
+            <TextArea
+              value={teamForm.description}
+              onChange={(e) => setTeamForm({ ...teamForm, description: e.target.value })}
+              placeholder="Describe what this team does..."
+              rows={3}
+            />
+          </Field>
+
+          <Field label="Team Color">
+            <div className="flex gap-3">
+              {["#7c3aed", "#3b82f6", "#ec4899", "#22c55e", "#f97316"].map((color) => (
+                <button
+                  key={color}
+                  onClick={() => setTeamForm({ ...teamForm, color })}
+                  className={`h-10 w-10 rounded-full transition ${
+                    teamForm.color === color ? "ring-2 ring-offset-2 ring-brand-500" : ""
+                  }`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </Field>
+
+          <div className="flex gap-3 justify-end pt-5">
+            <SecondaryButton onClick={() => setCreatingTeam(false)}>Cancel</SecondaryButton>
+            <PrimaryButton
+              onClick={() =>
+                createTeamMutation.mutate({
+                  name: teamForm.name,
+                  description: teamForm.description,
+                  color: teamForm.color
+                })
+              }
+              disabled={!teamForm.name || createTeamMutation.isPending}
+            >
+              {createTeamMutation.isPending ? "Creating..." : "Create Team"}
+            </PrimaryButton>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
