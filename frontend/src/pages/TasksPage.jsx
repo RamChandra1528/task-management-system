@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Filter, LayoutGrid, List, MoreVertical, Plus } from "lucide-react";
 
+import CreateTaskModal from "../components/CreateTaskModal.jsx";
 import TaskDetailModal from "../components/TaskDetailModal.jsx";
 import {
   Avatar,
@@ -28,6 +29,7 @@ export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState("");
+  const [creating, setCreating] = useState(false);
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ["tasks"],
@@ -42,6 +44,14 @@ export default function TasksPage() {
   const { data: users = [] } = useQuery({
     queryKey: ["users"],
     queryFn: userApi.list
+  });
+
+  const createMutation = useMutation({
+    mutationFn: taskApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      setCreating(false);
+    }
   });
 
   const updateMutation = useMutation({
@@ -83,7 +93,7 @@ export default function TasksPage() {
         title="Tasks" 
         subtitle="Manage and track all your tasks in one place"
         action={
-          <PrimaryButton>
+          <PrimaryButton onClick={() => setCreating(true)}>
             <Plus className="h-4 w-4" />
             New Task
           </PrimaryButton>
@@ -199,6 +209,16 @@ export default function TasksPage() {
           </div>
         </div>
       </div>
+
+      {/* Create Task Modal */}
+      <CreateTaskModal
+        open={creating}
+        onClose={() => setCreating(false)}
+        onSubmit={(payload) => createMutation.mutate(payload)}
+        loading={createMutation.isPending}
+        projects={projects}
+        users={users}
+      />
 
       {/* Task Detail Modal */}
       <TaskDetailModal

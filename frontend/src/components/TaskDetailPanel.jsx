@@ -23,6 +23,12 @@ export default function TaskDetailPanel({
   busy
 }) {
   const [comment, setComment] = useState("");
+  const projectMemberIds = new Set(
+    task?.project?.members?.map((member) => member._id || member) || []
+  );
+  const assigneeOptions = projectMemberIds.size
+    ? users.filter((user) => projectMemberIds.has(user._id))
+    : users;
 
   const progressCount = useMemo(() => {
     const total = task?.checklist?.length || 0;
@@ -101,7 +107,7 @@ export default function TaskDetailPanel({
               onChange={(event) => onUpdate(task._id, { assignee: event.target.value })}
               disabled={busy}
             >
-              {users.map((user) => (
+              {assigneeOptions.map((user) => (
                 <option key={user._id} value={user._id}>
                   {user.name}
                 </option>

@@ -43,7 +43,7 @@ export default function LoginPage() {
         <LogoMark compact />
         <div>
           <div className="max-w-lg text-5xl font-extrabold leading-tight">
-            Welcome back to your team’s command center.
+            Welcome back to your team's command center.
           </div>
           <p className="mt-6 max-w-lg text-lg leading-8 text-white/80">
             Use the seeded admin account to explore the full workspace instantly.

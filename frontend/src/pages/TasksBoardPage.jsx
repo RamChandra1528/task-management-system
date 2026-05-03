@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Filter, MoreHorizontal } from "lucide-react";
 
+import CreateTaskModal from "../components/CreateTaskModal.jsx";
 import TaskDetailPanel from "../components/TaskDetailPanel.jsx";
 import {
   Avatar,
@@ -11,7 +12,7 @@ import {
   SectionTitle,
   SecondaryButton
 } from "../components/ui.jsx";
-import { taskApi, userApi } from "../lib/api.js";
+import { projectApi, taskApi, userApi } from "../lib/api.js";
 import { formatDate } from "../lib/utils.js";
 
 const columns = [
@@ -25,6 +26,7 @@ const columns = [
 export default function TasksBoardPage() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState("");
+  const [creatingStatus, setCreatingStatus] = useState("");
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ["tasks"],
@@ -34,6 +36,20 @@ export default function TasksBoardPage() {
   const { data: users = [] } = useQuery({
     queryKey: ["users"],
     queryFn: userApi.list
+  });
+
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects"],
+    queryFn: projectApi.list
+  });
+
+  const createMutation = useMutation({
+    mutationFn: taskApi.create,
+    onSuccess: (task) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      setSelectedId(task._id);
+      setCreatingStatus("");
+    }
   });
 
   const updateMutation = useMutation({
@@ -144,7 +160,10 @@ export default function TasksBoardPage() {
                   ))}
                 </div>
 
-                <button className="mt-auto rounded-2xl border border-dashed border-brand-200 px-4 py-3 text-sm font-semibold text-brand-500">
+                <button
+                  onClick={() => setCreatingStatus(column.key)}
+                  className="mt-auto rounded-2xl border border-dashed border-brand-200 px-4 py-3 text-sm font-semibold text-brand-500"
+                >
                   + Add Task
                 </button>
               </Card>
@@ -161,6 +180,20 @@ export default function TasksBoardPage() {
           onDelete={(id) => deleteMutation.mutate(id)}
         />
       </div>
+
+      <CreateTaskModal
+        open={Boolean(creatingStatus)}
+        onClose={() => setCreatingStatus("")}
+        onSubmit={(payload) =>
+          createMutation.mutate({
+            ...payload,
+            status: creatingStatus || payload.status
+          })
+        }
+        loading={createMutation.isPending}
+        projects={projects}
+        users={users}
+      />
     </div>
   );
 }

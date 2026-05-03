@@ -15,7 +15,7 @@ export const protect = asyncHandler(async (req, _res, next) => {
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, process.env.JWT_SECRET || "super-secret-taskpro-key");
     const user = await User.findById(payload.sub).populate("workspace team");
 
     if (!user) {

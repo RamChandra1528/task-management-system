@@ -8,7 +8,6 @@ import CalendarPage from "./pages/CalendarPage.jsx";
 import FilesPage from "./pages/FilesPage.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
-import MessagesPage from "./pages/MessagesPage.jsx";
 import OverviewPage from "./pages/OverviewPage.jsx";
 import ProjectsPage from "./pages/ProjectsPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
@@ -88,7 +87,6 @@ function AppRoutes() {
         <Route path="team" element={<TeamPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="files" element={<FilesPage />} />
-        <Route path="messages" element={<MessagesPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to={rootRedirect} replace />} />

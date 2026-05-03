@@ -1,6 +1,7 @@
 import { User } from "../models/User.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { httpError } from "../utils/httpError.js";
+import { optionalRef } from "../utils/payload.js";
 
 export const getUsers = asyncHandler(async (req, res) => {
   const { search = "", team, department } = req.query;
@@ -118,7 +119,7 @@ export const createUser = asyncHandler(async (req, res) => {
 
   const user = await User.create({
     workspace: req.user.workspace._id,
-    team: team || null,
+    team: optionalRef(team),
     name,
     email,
     password,
@@ -172,7 +173,7 @@ export const updateUser = asyncHandler(async (req, res) => {
 
   for (const field of fields) {
     if (req.body[field] !== undefined) {
-      user[field] = req.body[field];
+      user[field] = field === "team" ? optionalRef(req.body[field]) : req.body[field];
     }
   }
 

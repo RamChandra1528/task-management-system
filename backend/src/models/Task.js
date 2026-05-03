@@ -67,11 +67,14 @@ const taskSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
+      minlength: 2,
+      maxlength: 180
     },
     description: {
       type: String,
-      default: ""
+      default: "",
+      maxlength: 3000
     },
     status: {
       type: String,
@@ -93,7 +96,8 @@ const taskSchema = new mongoose.Schema(
     },
     estimatedHours: {
       type: Number,
-      default: 0
+      default: 0,
+      min: 0
     },
     startDate: Date,
     dueDate: Date,
@@ -118,5 +122,13 @@ const taskSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+taskSchema.pre("validate", function validateDates(next) {
+  if (this.startDate && this.dueDate && this.startDate > this.dueDate) {
+    this.invalidate("dueDate", "Task due date must be after the start date");
+  }
+
+  next();
+});
 
 export const Task = mongoose.model("Task", taskSchema);

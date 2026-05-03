@@ -1,6 +1,7 @@
 import { Event } from "../models/Event.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { httpError } from "../utils/httpError.js";
+import { optionalArray, optionalRef } from "../utils/payload.js";
 
 const eventPopulate = [
   { path: "project", select: "name color" },
@@ -34,11 +35,11 @@ export const createEvent = asyncHandler(async (req, res) => {
     start,
     end,
     description,
-    project,
-    task,
-    attendees,
+    project: optionalRef(project),
+    task: optionalRef(task),
+    attendees: optionalArray(attendees),
     priority,
-    tags,
+    tags: optionalArray(tags),
     color
   });
 
@@ -75,7 +76,13 @@ export const updateEvent = asyncHandler(async (req, res) => {
 
   for (const field of fields) {
     if (req.body[field] !== undefined) {
-      event[field] = req.body[field];
+      if (["project", "task"].includes(field)) {
+        event[field] = optionalRef(req.body[field]);
+      } else if (["attendees", "tags"].includes(field)) {
+        event[field] = optionalArray(req.body[field]);
+      } else {
+        event[field] = req.body[field];
+      }
     }
   }
 

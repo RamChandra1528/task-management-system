@@ -161,7 +161,7 @@ export default function ProjectDetailModal({
                   <div className="font-semibold text-ink text-sm">{task.title}</div>
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <div className="text-xs text-soft">
-                      {statusLabel(task.status)} • {formatDate(task.dueDate)}
+                      {statusLabel(task.status)} - {formatDate(task.dueDate)}
                     </div>
                     <Badge tone={task.priority}>{task.priority}</Badge>
                   </div>

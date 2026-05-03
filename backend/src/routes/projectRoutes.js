@@ -16,6 +16,6 @@ router.get("/", getProjects);
 router.post("/", authorize("admin", "member"), createProject);
 router.get("/:id", getProjectById);
 router.put("/:id", authorize("admin", "member"), updateProject);
-router.delete("/:id", authorize("admin"), deleteProject);
+router.delete("/:id", authorize("admin", "member"), deleteProject);
 
 export default router;

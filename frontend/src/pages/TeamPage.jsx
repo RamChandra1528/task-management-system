@@ -11,6 +11,7 @@ import {
   MoreVertical
 } from "lucide-react";
 
+import InviteMemberModal from "../components/InviteMemberModal.jsx";
 import TeamMemberModal from "../components/TeamMemberModal.jsx";
 import {
   Avatar,
@@ -46,6 +47,7 @@ export default function TeamPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState("");
+  const [inviting, setInviting] = useState(false);
   const [memberModal, setMemberModal] = useState({ mode: null, member: null });
 
   const { data: users = [], isLoading } = useQuery({
@@ -110,9 +112,7 @@ export default function TeamPage() {
               Filter
             </SecondaryButton>
             {isAdmin ? (
-              <PrimaryButton
-                onClick={() => setMemberModal({ mode: "create", member: null })}
-              >
+              <PrimaryButton onClick={() => setInviting(true)}>
                 <Plus className="h-4 w-4" />
                 Invite Member
               </PrimaryButton>
@@ -263,182 +263,14 @@ export default function TeamPage() {
         busy={updateUserMutation.isPending || removeUserMutation.isPending}
       />
 
-      {/* Create/Edit Member Modal */}
-      <Modal
-        open={Boolean(memberModal.mode)}
-        onClose={() => setMemberModal({ mode: null, member: null })}
-        title={memberModal.mode === "edit" ? "Edit Member" : "Invite Member"}
-        subtitle={
-          memberModal.mode === "edit"
-            ? "Update this teammate's role, team and profile details."
-            : "Create a workspace account for a new teammate."
-        }
-      >
-        <MemberForm
-          mode={memberModal.mode}
-          member={memberModal.member}
-          teams={teams}
-          saving={createUserMutation.isPending || updateUserMutation.isPending}
-          error={createUserMutation.error?.message || updateUserMutation.error?.message}
-          onSubmit={(payload) => {
-            if (memberModal.mode === "edit") {
-              updateUserMutation.mutate({ id: memberModal.member._id, payload });
-            } else {
-              createUserMutation.mutate(payload);
-            }
-          }}
-          onCancel={() => setMemberModal({ mode: null, member: null })}
-        />
-      </Modal>
+      {/* Invite Member Modal */}
+      <InviteMemberModal
+        open={inviting}
+        onClose={() => setInviting(false)}
+        onSubmit={(payload) => createUserMutation.mutate(payload)}
+        loading={createUserMutation.isPending}
+        teams={teams}
+      />
     </div>
-  );
-}
-
-function MemberForm({ mode, member, teams, saving, error, onSubmit, onCancel }) {
-  const [form, setForm] = useState({
-    name: member?.name || "",
-    email: member?.email || "",
-    password: "",
-    role: member?.role || "member",
-    team: member?.team?._id || member?.team || teams[0]?._id || "",
-    jobTitle: member?.jobTitle || "",
-    department: member?.department || teams[0]?.department || "General",
-    phone: member?.phone || "",
-    location: member?.location || "",
-    bio: member?.bio || "",
-    presence: member?.presence || "online",
-    permissions:
-      member?.permissions ||
-      ["Project Management", "Task Management", "Reports Access"]
-  });
-
-  function update(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function togglePermission(permission) {
-    setForm((current) => ({
-      ...current,
-      permissions: current.permissions.includes(permission)
-        ? current.permissions.filter((item) => item !== permission)
-        : [...current.permissions, permission]
-    }));
-  }
-
-  return (
-    <form
-      className="space-y-5"
-      onSubmit={(event) => {
-        event.preventDefault();
-        const payload = { ...form };
-        if (mode === "edit") {
-          delete payload.password;
-        }
-        onSubmit(payload);
-      }}
-    >
-      <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Full Name">
-          <Input 
-            value={form.name} 
-            onChange={(event) => update("name", event.target.value)} 
-            required 
-            disabled={saving}
-          />
-        </Field>
-        <Field label="Email">
-          <Input
-            type="email"
-            value={form.email}
-            onChange={(event) => update("email", event.target.value)}
-            required
-            disabled={saving}
-          />
-        </Field>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {mode !== "edit" ? (
-          <Field label="Temporary Password">
-            <Input
-              type="password"
-              value={form.password}
-              onChange={(event) => update("password", event.target.value)}
-              required
-              minLength={6}
-              disabled={saving}
-            />
-          </Field>
-        ) : null}
-        <Field label="Role">
-          <Select 
-            value={form.role} 
-            onChange={(event) => update("role", event.target.value)}
-            disabled={saving}
-          >
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
-          </Select>
-        </Field>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Job Title">
-          <Input
-            value={form.jobTitle}
-            onChange={(event) => update("jobTitle", event.target.value)}
-            disabled={saving}
-          />
-        </Field>
-        <Field label="Department">
-          <Input
-            value={form.department}
-            onChange={(event) => update("department", event.target.value)}
-            disabled={saving}
-          />
-        </Field>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Phone">
-          <Input
-            value={form.phone}
-            onChange={(event) => update("phone", event.target.value)}
-            disabled={saving}
-          />
-        </Field>
-        <Field label="Location">
-          <Input
-            value={form.location}
-            onChange={(event) => update("location", event.target.value)}
-            disabled={saving}
-          />
-        </Field>
-      </div>
-
-      <Field label="Bio">
-        <TextArea
-          value={form.bio}
-          onChange={(event) => update("bio", event.target.value)}
-          disabled={saving}
-          rows={3}
-        />
-      </Field>
-
-      {error && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
-          {error}
-        </div>
-      )}
-
-      <div className="border-t border-brand-100 pt-4 flex gap-3">
-        <PrimaryButton type="submit" disabled={saving} className="flex-1">
-          {saving ? "Saving..." : mode === "edit" ? "Update Member" : "Send Invite"}
-        </PrimaryButton>
-        <SecondaryButton type="button" onClick={onCancel} disabled={saving} className="flex-1">
-          Cancel
-        </SecondaryButton>
-      </div>
-    </form>
   );
 }

@@ -97,15 +97,6 @@ export const fileApi = {
   downloadUrl: (id) => `${baseURL}/files/${id}/download`
 };
 
-export const messageApi = {
-  list: () => unwrap(api.get("/messages/conversations")),
-  detail: (id) => unwrap(api.get(`/messages/conversations/${id}`)),
-  createConversation: (payload) =>
-    unwrap(api.post("/messages/conversations", payload)),
-  send: (id, payload) =>
-    unwrap(api.post(`/messages/conversations/${id}/messages`, payload))
-};
-
 export const reportApi = {
   summary: () => unwrap(api.get("/reports/summary"))
 };

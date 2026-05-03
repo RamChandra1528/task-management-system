@@ -16,7 +16,9 @@ const projectSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
+      minlength: 2,
+      maxlength: 120
     },
     slug: {
       type: String,
@@ -24,7 +26,8 @@ const projectSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      default: ""
+      default: "",
+      maxlength: 2000
     },
     color: {
       type: String,
@@ -36,7 +39,7 @@ const projectSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["active", "at-risk", "completed", "archived", "on-hold"],
+      enum: ["planning", "active", "at-risk", "completed", "archived", "on-hold"],
       default: "active"
     },
     priority: {
@@ -46,7 +49,9 @@ const projectSchema = new mongoose.Schema(
     },
     progress: {
       type: Number,
-      default: 0
+      default: 0,
+      min: 0,
+      max: 100
     },
     startDate: Date,
     dueDate: Date,
@@ -78,5 +83,13 @@ const projectSchema = new mongoose.Schema(
 );
 
 projectSchema.index({ workspace: 1, slug: 1 }, { unique: true });
+
+projectSchema.pre("validate", function validateDates(next) {
+  if (this.startDate && this.dueDate && this.startDate > this.dueDate) {
+    this.invalidate("dueDate", "Project due date must be after the start date");
+  }
+
+  next();
+});
 
 export const Project = mongoose.model("Project", projectSchema);

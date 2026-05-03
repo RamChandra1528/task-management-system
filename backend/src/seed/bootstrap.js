@@ -3,10 +3,8 @@ import path from "node:path";
 import url from "node:url";
 
 import { REFERENCE_DATE } from "../config/reference.js";
-import { Conversation } from "../models/Conversation.js";
 import { Event } from "../models/Event.js";
 import { FileAsset } from "../models/FileAsset.js";
-import { Message } from "../models/Message.js";
 import { Notification } from "../models/Notification.js";
 import { Project } from "../models/Project.js";
 import { Task } from "../models/Task.js";
@@ -137,8 +135,6 @@ export async function bootstrapWorkspace({ force = false } = {}) {
   if (force) {
     await Promise.all([
       Notification.deleteMany({}),
-      Message.deleteMany({}),
-      Conversation.deleteMany({}),
       FileAsset.deleteMany({}),
       Event.deleteMany({}),
       Task.deleteMany({}),
@@ -1448,133 +1444,6 @@ export async function bootstrapWorkspace({ force = false } = {}) {
     }))
   );
 
-  const conversationDefs = [
-    {
-      name: "Design Team",
-      type: "group",
-      about:
-        "This channel is for all design discussions, feedback, and updates.",
-      members: [
-        "emma@aurora.com",
-        "olivia@aurora.com",
-        "sophia@aurora.com",
-        "james@aurora.com",
-        "william@aurora.com",
-        "daniel@aurora.com"
-      ],
-      project: "Aurora Website Redesign"
-    },
-    {
-      name: "James Park",
-      type: "direct",
-      about: "Direct chat with James.",
-      members: ["emma@aurora.com", "james@aurora.com"]
-    },
-    {
-      name: "Marketing Team",
-      type: "group",
-      about: "Campaign planning and launch coordination.",
-      members: ["emma@aurora.com", "william@aurora.com", "mia@aurora.com", "ethan@aurora.com"],
-      project: "Marketing Campaign Q3"
-    },
-    {
-      name: "Project Alpha",
-      type: "project",
-      about: "General status updates for the active roadmap stream.",
-      members: ["emma@aurora.com", "ava@aurora.com", "lucas@aurora.com"],
-      project: "AI Workflow Automations"
-    }
-  ];
-
-  const conversations = await Conversation.insertMany(
-    conversationDefs.map((conversation) => ({
-      workspace: workspace._id,
-      name: conversation.name,
-      type: conversation.type,
-      about: conversation.about,
-      project: conversation.project ? projectMap[conversation.project]._id : null,
-      createdBy: userMap["emma@aurora.com"]._id,
-      members: conversation.members.map((email) => userMap[email]._id),
-      lastMessageAt: REFERENCE_DATE
-    }))
-  );
-
-  const conversationMap = Object.fromEntries(
-    conversations.map((conversation) => [conversation.name, conversation])
-  );
-
-  const messageDefs = [
-    {
-      conversation: "Design Team",
-      sender: "olivia@aurora.com",
-      body: "Hi team! Please review the latest designs for the dashboard. Would love your feedback.",
-      attachments: [{ name: "Dashboard Design.fig", url: "", sizeLabel: "12.4 MB", type: "fig" }],
-      createdAt: dateAt("2025-05-12T14:30:00.000Z")
-    },
-    {
-      conversation: "Design Team",
-      sender: "sophia@aurora.com",
-      body: "Looks great! I really like the new layout. Just a small suggestion on the chart colors.",
-      createdAt: dateAt("2025-05-12T14:32:00.000Z")
-    },
-    {
-      conversation: "Design Team",
-      sender: "james@aurora.com",
-      body: "I agree with Sophia. The typography looks much better too.",
-      createdAt: dateAt("2025-05-12T14:35:00.000Z")
-    },
-    {
-      conversation: "Design Team",
-      sender: "emma@aurora.com",
-      body: "Thanks everyone! I'll update the colors and share the new version shortly.",
-      createdAt: dateAt("2025-05-12T14:38:00.000Z")
-    },
-    {
-      conversation: "Design Team",
-      sender: "william@aurora.com",
-      body: "Perfect! Let me know if you need any help.",
-      reactions: [{ emoji: "👍", count: 1 }],
-      createdAt: dateAt("2025-05-12T14:40:00.000Z")
-    },
-    {
-      conversation: "James Park",
-      sender: "james@aurora.com",
-      body: "Sure, I'll update the task details.",
-      createdAt: dateAt("2025-05-12T13:15:00.000Z")
-    },
-    {
-      conversation: "Marketing Team",
-      sender: "sophia@aurora.com",
-      body: "Campaign assets are ready!",
-      createdAt: dateAt("2025-05-11T16:10:00.000Z")
-    },
-    {
-      conversation: "Project Alpha",
-      sender: "emma@aurora.com",
-      body: "Project deadline moved to May 30.",
-      createdAt: dateAt("2025-05-09T15:00:00.000Z")
-    }
-  ];
-
-  await Message.insertMany(
-    messageDefs.map((message) => ({
-      workspace: workspace._id,
-      conversation: conversationMap[message.conversation]._id,
-      sender: userMap[message.sender]._id,
-      body: message.body,
-      attachments: message.attachments || [],
-      reactions: message.reactions || [],
-      createdAt: message.createdAt,
-      updatedAt: message.createdAt
-    }))
-  );
-
-  for (const message of messageDefs) {
-    await Conversation.findByIdAndUpdate(conversationMap[message.conversation]._id, {
-      lastMessageAt: message.createdAt
-    });
-  }
-
   await Notification.insertMany([
     {
       workspace: workspace._id,
@@ -1595,16 +1464,6 @@ export async function bootstrapWorkspace({ force = false } = {}) {
       link: "/calendar",
       read: false,
       createdAt: dateAt("2025-05-12T12:00:00.000Z")
-    },
-    {
-      workspace: workspace._id,
-      user: userMap["emma@aurora.com"]._id,
-      type: "mention",
-      title: "New mention",
-      message: "Olivia mentioned you in Design Team.",
-      link: "/messages",
-      read: false,
-      createdAt: dateAt("2025-05-12T11:00:00.000Z")
     }
   ]);
 

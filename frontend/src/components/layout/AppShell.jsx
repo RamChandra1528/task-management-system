@@ -13,7 +13,6 @@ import {
   Home,
   KanbanSquare,
   Menu,
-  MessageSquare,
   Plus,
   Search,
   Settings,
@@ -51,7 +50,6 @@ const navigation = [
   { to: "/app/team", label: "Team", icon: Users },
   { to: "/app/reports", label: "Reports", icon: BarChart3 },
   { to: "/app/files", label: "Files", icon: File },
-  { to: "/app/messages", label: "Messages", icon: MessageSquare },
   { to: "/app/settings", label: "Settings", icon: Settings }
 ];
 
@@ -228,6 +226,14 @@ function QuickCreateModal({ open, onClose }) {
     ],
     [isAdmin]
   );
+  const selectedProject = projects.find((project) => project._id === form.project);
+  const selectedProjectMemberIds = new Set(
+    selectedProject?.members?.map((member) => member._id || member) || []
+  );
+  const taskAssigneeOptions =
+    type === "task" && selectedProjectMemberIds.size
+      ? users.filter((person) => selectedProjectMemberIds.has(person._id))
+      : users;
 
   return (
     <Modal
@@ -291,7 +297,11 @@ function QuickCreateModal({ open, onClose }) {
               <Select
                 value={form.project}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, project: event.target.value }))
+                  setForm((current) => ({
+                    ...current,
+                    project: event.target.value,
+                    assignee: type === "task" ? "" : current.assignee
+                  }))
                 }
               >
                 <option value="">Select a project</option>
@@ -311,7 +321,7 @@ function QuickCreateModal({ open, onClose }) {
                   }
                 >
                   <option value="">Select a teammate</option>
-                  {users.map((person) => (
+                  {taskAssigneeOptions.map((person) => (
                     <option key={person._id} value={person._id}>
                       {person.name}
                     </option>

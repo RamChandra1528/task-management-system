@@ -12,6 +12,11 @@ export default function FormModal({
   loading = false,
   size = "md"
 }) {
+  function handleSubmit(event) {
+    event.preventDefault();
+    onSubmit?.(event);
+  }
+
   return (
     <Modal
       open={open}
@@ -21,10 +26,7 @@ export default function FormModal({
       size={size}
     >
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit();
-        }}
+        onSubmit={handleSubmit}
         className="space-y-6"
       >
         {children}

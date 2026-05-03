@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Filter, LayoutGrid, List, Plus } from "lucide-react";
 
+import CreateProjectModal from "../components/CreateProjectModal.jsx";
 import ProjectDetailModal from "../components/ProjectDetailModal.jsx";
 import {
   AvatarGroup,
@@ -19,7 +20,7 @@ import {
   SecondaryButton,
   TextArea
 } from "../components/ui.jsx";
-import { projectApi, taskApi } from "../lib/api.js";
+import { projectApi, taskApi, userApi } from "../lib/api.js";
 import { formatDate } from "../lib/utils.js";
 
 const filters = [
@@ -35,6 +36,7 @@ export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [editing, setEditing] = useState(null);
+  const [creating, setCreating] = useState(false);
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ["projects"],
@@ -44,6 +46,11 @@ export default function ProjectsPage() {
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks"],
     queryFn: taskApi.list
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ["users"],
+    queryFn: userApi.list
   });
 
   const visibleProjects = useMemo(() => {
@@ -59,6 +66,14 @@ export default function ProjectsPage() {
   }, [projects, search, statusFilter]);
 
   const selectedProject = projects.find((p) => p._id === selectedId) || null;
+
+  const createProject = useMutation({
+    mutationFn: projectApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      setCreating(false);
+    }
+  });
 
   const updateProject = useMutation({
     mutationFn: ({ id, payload }) => projectApi.update(id, payload),
@@ -86,7 +101,7 @@ export default function ProjectsPage() {
         title="Projects" 
         subtitle="Browse and manage all workspace projects"
         action={
-          <PrimaryButton>
+          <PrimaryButton onClick={() => setCreating(true)}>
             <Plus className="h-4 w-4" />
             New Project
           </PrimaryButton>
@@ -180,6 +195,15 @@ export default function ProjectsPage() {
         </div>
       </div>
 
+      {/* Create Project Modal */}
+      <CreateProjectModal
+        open={creating}
+        onClose={() => setCreating(false)}
+        onSubmit={(payload) => createProject.mutate(payload)}
+        loading={createProject.isPending}
+        users={users}
+      />
+
       {/* Project Detail Modal */}
       <ProjectDetailModal
         open={!!selectedId}
@@ -203,6 +227,7 @@ export default function ProjectsPage() {
         {editing ? (
           <ProjectEditor
             project={editing}
+            users={users}
             saving={updateProject.isPending}
             onSubmit={(payload) =>
               updateProject.mutate({
@@ -218,7 +243,7 @@ export default function ProjectsPage() {
   );
 }
 
-function ProjectEditor({ project, saving, onSubmit, onCancel }) {
+function ProjectEditor({ project, users, saving, onSubmit, onCancel }) {
   const [form, setForm] = useState({
     name: project.name,
     description: project.description,
@@ -226,8 +251,18 @@ function ProjectEditor({ project, saving, onSubmit, onCancel }) {
     priority: project.priority,
     progress: project.progress,
     dueDate: project.dueDate?.slice?.(0, 10) || "",
-    startDate: project.startDate?.slice?.(0, 10) || ""
+    startDate: project.startDate?.slice?.(0, 10) || "",
+    members: project.members?.map((member) => member._id || member) || []
   });
+
+  function toggleMember(userId) {
+    setForm((current) => ({
+      ...current,
+      members: current.members.includes(userId)
+        ? current.members.filter((id) => id !== userId)
+        : [...current.members, userId]
+    }));
+  }
 
   return (
     <form
@@ -328,6 +363,30 @@ function ProjectEditor({ project, saving, onSubmit, onCancel }) {
           />
         </Field>
       </div>
+
+      <Field label="Project Members">
+        <div className="grid max-h-48 gap-2 overflow-y-auto rounded-2xl border border-brand-100 p-3">
+          {users.length === 0 ? (
+            <div className="text-sm text-soft">No team members available</div>
+          ) : (
+            users.map((user) => (
+              <label
+                key={user._id}
+                className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-brand-50/50"
+              >
+                <input
+                  type="checkbox"
+                  checked={form.members.includes(user._id)}
+                  onChange={() => toggleMember(user._id)}
+                  disabled={saving}
+                />
+                <span className="text-sm font-medium text-ink">{user.name}</span>
+                <span className="truncate text-xs text-soft">{user.email}</span>
+              </label>
+            ))
+          )}
+        </div>
+      </Field>
 
       <div className="flex gap-3 pt-4 border-t border-brand-100">
         <PrimaryButton type="submit" disabled={saving} className="flex-1">

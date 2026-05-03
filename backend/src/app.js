@@ -10,7 +10,6 @@ import authRoutes from "./routes/authRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import fileRoutes from "./routes/fileRoutes.js";
-import messageRoutes from "./routes/messageRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
@@ -38,9 +37,21 @@ export function createApp() {
     next();
   });
 
+  const allowedOrigins = process.env.CLIENT_URL?.split(",").map((origin) => origin.trim()) || [];
   app.use(
     cors({
-      origin: process.env.CLIENT_URL?.split(",") || "*"
+      origin(origin, callback) {
+        if (
+          !origin ||
+          allowedOrigins.includes(origin) ||
+          /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)
+        ) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error("Not allowed by CORS"));
+      }
     })
   );
   app.use(express.json({ limit: "8mb" }));
@@ -63,7 +74,6 @@ export function createApp() {
   app.use("/api/tasks", taskRoutes);
   app.use("/api/events", eventRoutes);
   app.use("/api/files", fileRoutes);
-  app.use("/api/messages", messageRoutes);
   app.use("/api/reports", reportRoutes);
   app.use("/api/notifications", notificationRoutes);
   app.use("/api/workspace", workspaceRoutes);

@@ -23,6 +23,8 @@ import {
   startOfWeek
 } from "date-fns";
 
+import CreateEventModal from "../components/CreateEventModal.jsx";
+
 import {
   ActionLink,
   AvatarGroup,
@@ -36,7 +38,7 @@ import {
   SectionTitle,
   SecondaryButton
 } from "../components/ui.jsx";
-import { eventApi, projectApi, userApi } from "../lib/api.js";
+import { eventApi, projectApi, taskApi, userApi } from "../lib/api.js";
 import { cn, formatDate, formatTime, statusLabel } from "../lib/utils.js";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -67,6 +69,7 @@ export default function CalendarPage() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState("");
   const [displayMonth, setDisplayMonth] = useState(new Date());
+  const [creating, setCreating] = useState(false);
   const [eventModal, setEventModal] = useState({ mode: null, event: null });
 
   const { data: events = [], isLoading } = useQuery({
@@ -79,14 +82,27 @@ export default function CalendarPage() {
     queryFn: projectApi.list
   });
 
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["tasks"],
+    queryFn: taskApi.list
+  });
+
   const { data: users = [] } = useQuery({
     queryKey: ["users"],
     queryFn: userApi.list
   });
 
+  const createMutation = useMutation({
+    mutationFn: eventApi.create,
+    onSuccess: (event) => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      setSelectedId(event._id);
+      setCreating(false);
+    }
+  });
+
   const saveMutation = useMutation({
-    mutationFn: ({ id, payload }) =>
-      id ? eventApi.update(id, payload) : eventApi.create(payload),
+    mutationFn: ({ id, payload }) => eventApi.update(id, payload),
     onSuccess: (event) => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
       setSelectedId(event._id);
@@ -131,17 +147,27 @@ export default function CalendarPage() {
       <div className="grid gap-6 xl:grid-cols-[1.8fr_0.8fr]">
         <div className="space-y-5">
           <div className="flex flex-wrap items-center gap-3">
-            <SecondaryButton>Today</SecondaryButton>
+            <SecondaryButton onClick={() => setDisplayMonth(new Date())}>Today</SecondaryButton>
             <div className="flex overflow-hidden rounded-2xl border border-brand-100 bg-white">
-              <button className="border-r border-brand-100 px-4 py-3 text-soft">
+              <button
+                onClick={() =>
+                  setDisplayMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))
+                }
+                className="border-r border-brand-100 px-4 py-3 text-soft"
+              >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <button className="px-4 py-3 text-soft">
+              <button
+                onClick={() =>
+                  setDisplayMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))
+                }
+                className="px-4 py-3 text-soft"
+              >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
             <SecondaryButton>
-              May 2025
+              {format(displayMonth, "MMMM yyyy")}
               <ChevronRight className="h-4 w-4 rotate-90" />
             </SecondaryButton>
             <div className="ml-auto flex items-center gap-3">
@@ -153,7 +179,7 @@ export default function CalendarPage() {
                 Month
                 <ChevronRight className="h-4 w-4 rotate-90" />
               </SecondaryButton>
-              <PrimaryButton onClick={() => setEventModal({ mode: "create", event: null })}>
+              <PrimaryButton onClick={() => setCreating(true)}>
                 Add Event
               </PrimaryButton>
             </div>
@@ -305,7 +331,7 @@ export default function CalendarPage() {
 
           <Card className="p-6">
             <div className="flex items-center justify-between">
-              <div className="text-xl font-bold text-ink">May 2025</div>
+              <div className="text-xl font-bold text-ink">{format(displayMonth, "MMMM yyyy")}</div>
               <div className="flex gap-2 text-soft">
                 <ChevronLeft className="h-5 w-5" />
                 <ChevronRight className="h-5 w-5" />
@@ -318,7 +344,7 @@ export default function CalendarPage() {
                 </div>
               ))}
               {monthDays.slice(0, 35).map((day) => {
-                const selected = isSameDay(day, new Date(2025, 4, 12));
+                const selected = selectedEvent && isSameDay(day, toDate(selectedEvent.start));
                 return (
                   <div
                     key={day.toISOString()}
@@ -374,25 +400,39 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      {/* Create Event Modal */}
+      <CreateEventModal
+        open={creating}
+        onClose={() => setCreating(false)}
+        onSubmit={(payload) => createMutation.mutate(payload)}
+        loading={createMutation.isPending}
+        projects={projects}
+        tasks={tasks}
+        users={users}
+      />
+
+      {/* Edit Event Modal */}
       <Modal
         open={Boolean(eventModal.mode)}
         onClose={() => setEventModal({ mode: null, event: null })}
-        title={eventModal.mode === "edit" ? "Edit Event" : "Add Event"}
-        subtitle="Schedule work with project context, attendees and priority."
+        title="Edit Event"
+        subtitle="Update event details"
       >
-        <EventForm
-          event={eventModal.event}
-          projects={projects}
-          users={users}
-          saving={saveMutation.isPending}
-          error={saveMutation.error?.message}
-          onSubmit={(payload) =>
-            saveMutation.mutate({
-              id: eventModal.event?._id,
-              payload
-            })
-          }
-        />
+        {eventModal.mode === "edit" && eventModal.event ? (
+          <EventForm
+            event={eventModal.event}
+            projects={projects}
+            users={users}
+            saving={saveMutation.isPending}
+            error={saveMutation.error?.message}
+            onSubmit={(payload) =>
+              saveMutation.mutate({
+                id: eventModal.event._id,
+                payload
+              })
+            }
+          />
+        ) : null}
       </Modal>
     </div>
   );

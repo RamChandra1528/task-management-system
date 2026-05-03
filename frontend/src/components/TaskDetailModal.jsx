@@ -25,6 +25,12 @@ export default function TaskDetailModal({
 }) {
   const [comment, setComment] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const projectMemberIds = new Set(
+    task?.project?.members?.map((member) => member._id || member) || []
+  );
+  const assigneeOptions = projectMemberIds.size
+    ? users.filter((user) => projectMemberIds.has(user._id))
+    : users;
 
   const progressCount = useMemo(() => {
     const total = task?.checklist?.length || 0;
@@ -89,8 +95,7 @@ export default function TaskDetailModal({
               onChange={(event) => onUpdate(task._id, { assignee: event.target.value })}
               disabled={busy}
             >
-              <option value="">Unassigned</option>
-              {users.map((user) => (
+              {assigneeOptions.map((user) => (
                 <option key={user._id} value={user._id}>
                   {user.name}
                 </option>
@@ -213,9 +218,9 @@ export default function TaskDetailModal({
               {task.comments.map((c, index) => (
                 <div key={c._id || index} className="rounded-2xl border border-brand-100 p-4">
                   <div className="flex items-center gap-3">
-                    <Avatar user={c.author} size="sm" />
+                    <Avatar user={c.user} size="sm" />
                     <div className="flex-1">
-                      <div className="font-semibold text-ink">{c.author?.name}</div>
+                      <div className="font-semibold text-ink">{c.user?.name}</div>
                       <div className="text-xs text-soft">{formatDate(c.createdAt)}</div>
                     </div>
                   </div>

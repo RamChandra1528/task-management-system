@@ -33,8 +33,11 @@ import {
   SectionTitle,
   Select,
   SecondaryButton,
-  StatCard
+  StatCard,
+  TextArea
 } from "../components/ui.jsx";
+import CreateFolderModal from "../components/CreateFolderModal.jsx";
+import UploadFileModal from "../components/UploadFileModal.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { fileApi, projectApi, userApi } from "../lib/api.js";
 import { cn, formatDate, relativeToReference } from "../lib/utils.js";
@@ -436,56 +439,55 @@ export default function FilesPage() {
         ) : null}
       </div>
 
-      <Modal
-        open={Boolean(fileModal.mode)}
+      <CreateFolderModal
+        open={fileModal.mode === "folder"}
         onClose={() => setFileModal({ mode: null, file: null })}
-        title={
-          fileModal.mode === "upload"
-            ? "Upload File"
-            : fileModal.mode === "folder"
-              ? "Create Folder"
-              : "Edit File"
-        }
-        subtitle="Organize files with real workspace metadata and access."
+        onSubmit={(payload) => {
+          createFolderMutation.mutate(payload);
+        }}
+        loading={createFolderMutation.isPending}
+        projects={projects}
+      />
+
+      <UploadFileModal
+        open={fileModal.mode === "upload"}
+        onClose={() => setFileModal({ mode: null, file: null })}
+        onSubmit={(payload) => {
+          const formData = new FormData();
+          formData.append("file", payload.file);
+          formData.append("name", payload.name || payload.file.name);
+          formData.append("description", payload.description || "");
+          if (payload.project) formData.append("project", payload.project);
+          formData.append("sharedWith", JSON.stringify(payload.sharedWith || []));
+          uploadMutation.mutate(formData);
+        }}
+        loading={uploadMutation.isPending}
+        projects={projects}
+        users={users}
+      />
+
+      <Modal
+        open={fileModal.mode === "edit"}
+        onClose={() => setFileModal({ mode: null, file: null })}
+        title="Edit File"
+        subtitle="Update file details and sharing"
       >
-        <FileActionForm
-          mode={fileModal.mode}
-          file={fileModal.file}
-          projects={projects}
-          users={users}
-          saving={
-            createFolderMutation.isPending ||
-            uploadMutation.isPending ||
-            updateMutation.isPending
-          }
-          error={
-            createFolderMutation.error?.message ||
-            uploadMutation.error?.message ||
-            updateMutation.error?.message
-          }
-          onSubmit={(payload) => {
-            if (fileModal.mode === "upload") {
-              const formData = new FormData();
-              formData.append("file", payload.file);
-              formData.append("name", payload.name || payload.file.name);
-              formData.append("description", payload.description || "");
-              if (payload.project) formData.append("project", payload.project);
-              formData.append("sharedWith", JSON.stringify(payload.sharedWith || []));
-              uploadMutation.mutate(formData);
-              return;
+        {fileModal.file ? (
+          <FileEditForm
+            file={fileModal.file}
+            projects={projects}
+            users={users}
+            saving={updateMutation.isPending}
+            error={updateMutation.error?.message}
+            onCancel={() => setFileModal({ mode: null, file: null })}
+            onSubmit={(payload) =>
+              updateMutation.mutate({
+                id: fileModal.file._id,
+                payload
+              })
             }
-
-            if (fileModal.mode === "folder") {
-              createFolderMutation.mutate(payload);
-              return;
-            }
-
-            updateMutation.mutate({
-              id: fileModal.file._id,
-              payload
-            });
-          }}
-        />
+          />
+        ) : null}
       </Modal>
     </div>
   );
@@ -524,17 +526,25 @@ function InfoLine({ label, value }) {
   );
 }
 
-function FileActionForm({ mode, file, projects, users, saving, error, onSubmit }) {
+function FileEditForm({ file, projects, users, saving, error, onCancel, onSubmit }) {
   const [form, setForm] = useState({
-    file: null,
-    name: file?.name || "",
-    description: file?.description || "",
-    project: file?.project?._id || file?.project || "",
-    sharedWith: file?.sharedWith?.map((user) => user._id || user) || []
+    name: file.name || "",
+    description: file.description || "",
+    project: file.project?._id || file.project || "",
+    sharedWith: file.sharedWith?.map((user) => user._id || user) || []
   });
 
   function update(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function toggleShare(userId) {
+    setForm((current) => ({
+      ...current,
+      sharedWith: current.sharedWith.includes(userId)
+        ? current.sharedWith.filter((id) => id !== userId)
+        : [...current.sharedWith, userId]
+    }));
   }
 
   return (
@@ -542,30 +552,25 @@ function FileActionForm({ mode, file, projects, users, saving, error, onSubmit }
       className="space-y-5"
       onSubmit={(event) => {
         event.preventDefault();
+        if (!form.name.trim()) return;
         onSubmit(form);
       }}
     >
-      {mode === "upload" ? (
-        <Field label="File">
-          <Input
-            type="file"
-            required
-            onChange={(event) => update("file", event.target.files?.[0] || null)}
-          />
-        </Field>
-      ) : null}
-
-      <Field label={mode === "folder" ? "Folder Name" : "Name"}>
+      <Field label="Name">
         <Input
           value={form.name}
           onChange={(event) => update("name", event.target.value)}
-          required={mode !== "upload"}
-          placeholder={mode === "upload" ? "Leave blank to use filename" : ""}
+          disabled={saving}
+          required
         />
       </Field>
 
       <Field label="Project">
-        <Select value={form.project} onChange={(event) => update("project", event.target.value)}>
+        <Select
+          value={form.project}
+          onChange={(event) => update("project", event.target.value)}
+          disabled={saving}
+        >
           <option value="">Workspace root</option>
           {projects.map((project) => (
             <option key={project._id} value={project._id}>
@@ -576,68 +581,43 @@ function FileActionForm({ mode, file, projects, users, saving, error, onSubmit }
       </Field>
 
       <Field label="Description">
-        <Input
+        <TextArea
           value={form.description}
           onChange={(event) => update("description", event.target.value)}
-          placeholder="Describe this asset..."
+          disabled={saving}
+          rows={4}
         />
       </Field>
 
-      {mode !== "folder" ? (
-        <Field label="Shared With">
-          <Select
-            value=""
-            onChange={(event) => {
-              const value = event.target.value;
-              if (!value) return;
-              update(
-                "sharedWith",
-                form.sharedWith.includes(value) ? form.sharedWith : [...form.sharedWith, value]
-              );
-            }}
-          >
-            <option value="">Add teammate</option>
-            {users.map((user) => (
-              <option key={user._id} value={user._id}>
-                {user.name}
-              </option>
-            ))}
-          </Select>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {form.sharedWith.map((id) => {
-              const person = users.find((user) => user._id === id);
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() =>
-                    update(
-                      "sharedWith",
-                      form.sharedWith.filter((entry) => entry !== id)
-                    )
-                  }
-                  className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600"
-                >
-                  {person?.name || "User"} x
-                </button>
-              );
-            })}
-          </div>
-        </Field>
-      ) : null}
+      <Field label="Share With">
+        <div className="grid max-h-48 gap-2 overflow-y-auto rounded-2xl border border-brand-100 p-3">
+          {users.map((user) => (
+            <label
+              key={user._id}
+              className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-brand-50/50"
+            >
+              <input
+                type="checkbox"
+                checked={form.sharedWith.includes(user._id)}
+                onChange={() => toggleShare(user._id)}
+                disabled={saving}
+              />
+              <span className="text-sm font-medium text-ink">{user.name}</span>
+              <span className="truncate text-xs text-soft">{user.email}</span>
+            </label>
+          ))}
+        </div>
+      </Field>
 
       {error ? <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-500">{error}</div> : null}
 
-      <div className="flex justify-end">
-        <PrimaryButton type="submit" disabled={saving || (mode === "upload" && !form.file)}>
-          {saving
-            ? "Saving..."
-            : mode === "upload"
-              ? "Upload"
-              : mode === "folder"
-                ? "Create Folder"
-                : "Save Changes"}
+      <div className="flex gap-3 border-t border-brand-100 pt-4">
+        <PrimaryButton type="submit" disabled={saving} className="flex-1">
+          {saving ? "Saving..." : "Save File"}
         </PrimaryButton>
+        <SecondaryButton type="button" onClick={onCancel} disabled={saving} className="flex-1">
+          Cancel
+        </SecondaryButton>
       </div>
     </form>
   );

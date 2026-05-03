@@ -4,6 +4,7 @@ import { FileAsset } from "../models/FileAsset.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { formatBytes } from "../utils/formatters.js";
 import { httpError } from "../utils/httpError.js";
+import { optionalArray, optionalRef } from "../utils/payload.js";
 
 const filePopulate = [
   { path: "project", select: "name color" },
@@ -33,7 +34,7 @@ export const createFolder = asyncHandler(async (req, res) => {
 
   const folder = await FileAsset.create({
     workspace: req.user.workspace._id,
-    project,
+    project: optionalRef(project),
     uploadedBy: req.user._id,
     name,
     originalName: name,
@@ -41,7 +42,7 @@ export const createFolder = asyncHandler(async (req, res) => {
     extension: "",
     kind: "folder",
     description,
-    parentFolder,
+    parentFolder: optionalRef(parentFolder),
     sizeBytes: 0,
     sizeLabel: "0 B",
     activity: [
@@ -70,7 +71,7 @@ export const uploadFile = asyncHandler(async (req, res) => {
 
   const file = await FileAsset.create({
     workspace: req.user.workspace._id,
-    project: req.body.project || null,
+    project: optionalRef(req.body.project),
     uploadedBy: req.user._id,
     name: req.body.name || req.file.originalname,
     originalName: req.file.originalname,
@@ -78,8 +79,8 @@ export const uploadFile = asyncHandler(async (req, res) => {
     extension: path.extname(req.file.originalname).replace(".", "").toLowerCase(),
     kind: "file",
     description: req.body.description || "",
-    parentFolder: req.body.parentFolder || null,
-    sharedWith: req.body.sharedWith ? JSON.parse(req.body.sharedWith) : [],
+    parentFolder: optionalRef(req.body.parentFolder),
+    sharedWith: req.body.sharedWith ? optionalArray(JSON.parse(req.body.sharedWith)) : [],
     sizeBytes: req.file.size,
     sizeLabel: formatBytes(req.file.size),
     storagePath: req.file.path,
@@ -114,7 +115,13 @@ export const updateFile = asyncHandler(async (req, res) => {
 
   for (const field of fields) {
     if (req.body[field] !== undefined) {
-      file[field] = req.body[field];
+      if (["project", "parentFolder"].includes(field)) {
+        file[field] = optionalRef(req.body[field]);
+      } else if (field === "sharedWith") {
+        file[field] = optionalArray(req.body[field]);
+      } else {
+        file[field] = req.body[field];
+      }
     }
   }
 
