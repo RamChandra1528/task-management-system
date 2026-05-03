@@ -2,11 +2,11 @@ import dotenv from "dotenv";
 import path from "node:path";
 import url from "node:url";
 
-import { createApp } from "../../src/app.js";
-import { connectDatabase } from "../../src/config/db.js";
+import { createApp } from "../src/app.js";
+import { connectDatabase } from "../src/config/db.js";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 dotenv.config();
 
 process.env.MONGODB_URI ||= "mongodb://127.0.0.1:27017/taskpro";
