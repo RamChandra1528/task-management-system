@@ -39,6 +39,9 @@ export function createApp() {
 
   const allowedOrigins = process.env.CLIENT_URL?.split(",").map((origin) => origin.trim()) || [];
   
+  console.log("📝 CORS Configuration:");
+  console.log("- Allowed origins from CLIENT_URL:", allowedOrigins);
+  
   // Add common development and production domains
   const productionDomains = [
     /^https:\/\/.*\.netlify\.app$/,      // Netlify deployments
@@ -50,30 +53,35 @@ export function createApp() {
   app.use(
     cors({
       origin(origin, callback) {
+        console.log("🔍 CORS check for origin:", origin);
+        
         if (!origin) {
-          // Allow requests with no origin (like mobile apps)
+          console.log("✅ No origin (mobile/server request) - allowed");
           callback(null, true);
           return;
         }
 
         // Check if origin is in allowed list
         if (allowedOrigins.includes(origin)) {
+          console.log("✅ Origin in allowed list");
           callback(null, true);
           return;
         }
 
         // Check if origin matches production patterns
         if (productionDomains.some(pattern => pattern.test(origin))) {
+          console.log("✅ Origin matches production pattern");
           callback(null, true);
           return;
         }
 
-        console.warn(`CORS blocked: ${origin}`);
+        console.warn("❌ CORS blocked:", origin);
         callback(new Error("Not allowed by CORS"));
       },
       credentials: true,
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"]
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+      optionsSuccessStatus: 200
     })
   );
   app.use(express.json({ limit: "8mb" }));
