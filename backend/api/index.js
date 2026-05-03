@@ -2,7 +2,8 @@ import dotenv from "dotenv";
 import path from "node:path";
 import url from "node:url";
 
-const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -14,6 +15,7 @@ console.log("- MONGODB_URI:", process.env.MONGODB_URI ? "✓ Set" : "✗ Missing
 console.log("- JWT_SECRET:", process.env.JWT_SECRET ? "✓ Set" : "✗ Missing");
 console.log("- CLIENT_URL:", process.env.CLIENT_URL ? "✓ Set" : "✗ Missing");
 console.log("- NODE_ENV:", process.env.NODE_ENV || "development");
+console.log("- __dirname:", __dirname);
 
 // Set defaults
 process.env.MONGODB_URI ||= "mongodb://127.0.0.1:27017/taskpro";
@@ -30,8 +32,9 @@ async function initializeApp() {
     // Try to connect to database only once
     if (!dbConnected) {
       try {
-        console.log("📡 Connecting to MongoDB:", process.env.MONGODB_URI.substring(0, 50) + "...");
-        const { connectDatabase } = await import("../src/config/db.js");
+        console.log("📡 Connecting to MongoDB...");
+        const dbPath = url.pathToFileURL(path.resolve(__dirname, "../src/config/db.js")).href;
+        const { connectDatabase } = await import(dbPath);
         await connectDatabase(process.env.MONGODB_URI);
         dbConnected = true;
         console.log("✅ Database connected successfully");
@@ -45,7 +48,8 @@ async function initializeApp() {
     if (!app) {
       try {
         console.log("🚀 Initializing Express app...");
-        const { createApp } = await import("../src/app.js");
+        const appPath = url.pathToFileURL(path.resolve(__dirname, "../src/app.js")).href;
+        const { createApp } = await import(appPath);
         app = createApp();
         console.log("✅ Express app created successfully");
       } catch (appError) {
