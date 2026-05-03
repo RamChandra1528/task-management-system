@@ -59,6 +59,15 @@ export function createApp() {
   app.use(morgan("dev"));
   app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
 
+  app.get("/api", (_req, res) => {
+    res.json({
+      success: true,
+      message: "API Server Running",
+      status: "ok",
+      version: "1.0.0"
+    });
+  });
+
   app.get("/api/health", (_req, res) => {
     res.json({
       success: true,
