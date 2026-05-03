@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-route
 import AppShell from "./components/layout/AppShell.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { ModalProvider } from "./context/ModalContext.jsx";
+import AdminPage from "./pages/AdminPage.jsx";
 import CalendarPage from "./pages/CalendarPage.jsx";
 import FilesPage from "./pages/FilesPage.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
@@ -51,6 +52,12 @@ function GuestOnly({ children }) {
   return isAuthenticated ? <Navigate to="/app/overview" replace /> : children;
 }
 
+function AdminOnly({ children }) {
+  const { isAdmin } = useAuth();
+
+  return isAdmin ? children : <Navigate to="/app/overview" replace />;
+}
+
 function AppRoutes() {
   const auth = useAuth();
   const rootRedirect = useMemo(
@@ -87,6 +94,14 @@ function AppRoutes() {
         <Route path="team" element={<TeamPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="files" element={<FilesPage />} />
+        <Route
+          path="admin"
+          element={
+            <AdminOnly>
+              <AdminPage />
+            </AdminOnly>
+          }
+        />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to={rootRedirect} replace />} />

@@ -71,7 +71,8 @@ PORT=5000
 MONGODB_URI=mongodb://127.0.0.1:27017/taskpro
 JWT_SECRET=super-secret-taskpro-key
 CLIENT_URL=http://localhost:5173
-SEED_ON_START=true
+SEED_ON_START=false
+SEED_ADMIN_PASSWORD=
 ```
 
 Default frontend environment:
@@ -109,7 +110,7 @@ npm run dev:backend
 
 ## Seed Data
 
-The backend can seed an Aurora Workspace demo dataset with projects, users, teams, tasks, events, files, conversations, and notifications.
+The backend can seed a local workspace dataset with projects, users, teams, tasks, events, files, conversations, and notifications.
 
 Run the seed script:
 
@@ -117,14 +118,7 @@ Run the seed script:
 npm run seed
 ```
 
-If `SEED_ON_START=true`, the backend will also seed automatically when it starts and the database is empty.
-
-Demo login:
-
-```text
-Email: emma@aurora.com
-Password: TaskPro123!
-```
+If `SEED_ON_START=true`, the backend will also seed automatically when it starts and the database is empty. Set `SEED_ADMIN_PASSWORD` before running any seed command.
 
 ## Useful Scripts
 
@@ -148,13 +142,7 @@ Backend verification:
 npm run build --workspace backend
 ```
 
-## API Documentation
 
-See [docs/API.md](docs/API.md) for the complete API route reference, request examples, auth requirements, and role restrictions.
-
-## Deployment
-
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for Railway backend/MongoDB deployment and Vercel frontend deployment.
 
 ## Main Routes
 
@@ -172,9 +160,186 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for Railway backend/MongoDB deploym
 - `/app/messages` team messages
 - `/app/settings` account and workspace settings
 
+## Quick Start
+
+1. **Clone and Install**
+   ```bash
+   git clone <repo-url>
+   cd Z_project_assignemnt
+   npm install
+   ```
+
+2. **Configure Environment**
+   ```bash
+   copy backend\.env.example backend\.env
+   copy frontend\.env.example frontend\.env
+   ```
+
+3. **Start Development**
+   ```bash
+   npm run dev
+   ```
+
+4. **Access the App**
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:5000/api
+
+## Features
+
+### Core Modules
+- **Dashboard** - Overview of projects, tasks, and team activity
+- **Projects** - Create, manage, and organize projects
+- **Tasks** - Task management with status tracking
+- **Kanban Board** - Drag-and-drop task organization
+- **Calendar** - Event and task scheduling
+- **Team Management** - User roles, permissions, and invitations
+- **Reports** - Analytics and project insights
+- **File Management** - Upload, organize, and share files
+- **Team Messages** - Communication and notifications
+- **Settings** - Account and workspace configuration
+
+### Modals
+The application uses a centralized modal context for the following dialogs:
+- **CreateProjectModal** - New project creation
+- **CreateTaskModal** - Task creation and management
+- **CreateEventModal** - Event scheduling
+- **CreateFolderModal** - File organization
+- **UploadFileModal** - File uploads
+- **FilePreviewModal** - File viewing
+- **ProjectDetailModal** - Project information
+- **TaskDetailModal** - Task details
+- **InviteMemberModal** - Team invitations
+- **TeamMemberModal** - Member management
+- **FormModal** - Generic form dialog
+
+## Modal Implementation Guide
+
+### ModalContext Usage
+The `ModalContext` provides a global state for managing modal dialogs:
+
+```javascript
+import { useModal } from '@/context/ModalContext';
+
+const { openModal, closeModal } = useModal();
+
+// Open modal
+openModal('CreateProjectModal', { projectId: 123 });
+
+// Close modal
+closeModal();
+```
+
+### Creating a New Modal
+1. Create component in `src/components/`
+2. Export from component file
+3. Register in ModalContext
+4. Use via `useModal()` hook
+5. Pass data through modal parameters
+
+## Testing & Launch Guide
+
+### Before Deployment
+1. **Environment Setup**
+   - Verify all `.env` files are configured correctly
+   - Test database connection
+   - Check API endpoints
+
+2. **Local Testing**
+   ```bash
+   npm run dev
+   ```
+   - Test all main routes and features
+   - Verify form submissions
+   - Check file uploads
+   - Test authentication flows
+
+3. **Build Verification**
+   ```bash
+   npm run build
+   ```
+   - Ensure no build errors
+   - Check bundle size
+   - Verify all assets are included
+
+4. **Seeding (Optional)**
+   ```bash
+   npm run seed
+   ```
+   - Populates database with test data
+   - Useful for demo and testing
+
+### Deployment Checklist
+- [ ] Environment variables configured
+- [ ] Database URI set to production database
+- [ ] JWT_SECRET changed from default
+- [ ] SEED_ON_START set to false
+- [ ] CLIENT_URL points to production frontend
+- [ ] API_URL points to production backend
+- [ ] Build completes without errors
+- [ ] All tests pass
+- [ ] Database migrations completed
+- [ ] Backups created before deployment
+
+## Vercel Deployment
+
+### Frontend Deployment
+1. Connect repository to Vercel
+2. Set environment variables:
+   - `VITE_API_URL` = your backend API URL
+3. Build command: `npm run build --workspace frontend`
+4. Output directory: `frontend/dist`
+
+### Backend Deployment
+Deploy backend separately (Railway, Heroku, or similar):
+- Set `MONGODB_URI` to production database
+- Set `CLIENT_URL` to your Vercel frontend URL
+- Set `JWT_SECRET` to a secure random string
+- Set `SEED_ON_START=false`
+
+## Troubleshooting
+
+### Common Issues
+
+**Port already in use**
+```bash
+# Kill process on port 5000 (backend)
+netstat -ano | findstr :5000
+taskkill /PID <PID> /F
+```
+
+**MongoDB connection error**
+- Ensure MongoDB is running locally
+- Check MONGODB_URI in .env
+- Verify database credentials
+
+**CORS errors**
+- Check CLIENT_URL matches frontend URL
+- Verify API_URL in frontend .env
+- Check CORS configuration in backend
+
+**Build failures**
+- Delete node_modules and package-lock.json
+- Run `npm install` again
+- Check Node.js version (should be 20+)
+
+**Module not found errors**
+- Verify all imports use correct paths
+- Check component exports in index files
+- Ensure all dependencies are installed
+
+## Development Notes
+
+- The frontend uses Vite for fast development
+- TanStack Query handles data fetching and caching
+- Tailwind CSS for styling
+- JWT tokens stored in localStorage
+- Backend uses MongoDB with Mongoose ODM
+- Express middleware for auth and error handling
+- All API routes require authentication except `/auth/*`
+
 ## Notes
 
 - The UI reference screenshots are stored in the project root.
-- Uploaded and seeded files are handled by the backend file routes.
+- Uploaded files and optional seed files are handled by the backend file routes.
 - The frontend proxies `/api` to the backend during local Vite development.
-- For a real production deployment, set `SEED_ON_START=false` after any demo seed run and replace the example JWT secret.
+- For production deployment, keep `SEED_ON_START=false` and replace the example JWT secret.

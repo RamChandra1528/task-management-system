@@ -19,8 +19,8 @@ function authPayload(user, unreadNotifications = 0) {
 export const signup = asyncHandler(async (req, res) => {
   const { name, email, password, workspaceName } = req.body;
 
-  if (!name || !email || !password) {
-    throw httpError(400, "Name, email, and password are required");
+  if (!name || !email || !password || !workspaceName) {
+    throw httpError(400, "Name, email, password, and workspace name are required");
   }
 
   const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -28,16 +28,13 @@ export const signup = asyncHandler(async (req, res) => {
     throw httpError(409, "An account with this email already exists");
   }
 
-  let workspace = await Workspace.findOne().sort({ createdAt: 1 });
-  let role = "member";
-
-  if (!workspace) {
-    workspace = await Workspace.create({
-      name: workspaceName || `${name}'s Workspace`,
-      slug: slugify(workspaceName || name)
-    });
-    role = "admin";
-  }
+  const baseSlug = slugify(workspaceName);
+  const existingWorkspace = await Workspace.exists({ slug: baseSlug });
+  const workspace = await Workspace.create({
+    name: workspaceName,
+    slug: existingWorkspace ? `${baseSlug}-${Date.now().toString(36)}` : baseSlug
+  });
+  const role = "admin";
 
   const defaultTeam = await Team.findOne({ workspace: workspace._id });
 

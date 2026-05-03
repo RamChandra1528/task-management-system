@@ -7,15 +7,16 @@ import {
   Calendar,
   CheckSquare,
   ChevronDown,
-  Crown,
   File,
   Folder,
   Home,
   KanbanSquare,
+  LogOut,
   Menu,
   Plus,
   Search,
   Settings,
+  ShieldCheck,
   Users,
   X
 } from "lucide-react";
@@ -31,7 +32,6 @@ import {
 import { cn } from "../../lib/utils.js";
 import {
   Avatar,
-  Card,
   Field,
   Input,
   LogoMark,
@@ -41,7 +41,7 @@ import {
   Select
 } from "../ui.jsx";
 
-const navigation = [
+const baseNavigation = [
   { to: "/app/overview", label: "Overview", icon: Home },
   { to: "/app/projects", label: "Projects", icon: Folder },
   { to: "/app/tasks", label: "Tasks", icon: CheckSquare },
@@ -54,7 +54,15 @@ const navigation = [
 ];
 
 function Sidebar({ mobile, onClose }) {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
+  const navigation = useMemo(
+    () => [
+      ...baseNavigation.slice(0, -1),
+      ...(isAdmin ? [{ to: "/app/admin", label: "Admin", icon: ShieldCheck }] : []),
+      baseNavigation.at(-1)
+    ],
+    [isAdmin]
+  );
 
   return (
     <aside
@@ -99,22 +107,8 @@ function Sidebar({ mobile, onClose }) {
         })}
       </nav>
 
-      <div className="sidebar-footer mt-auto space-y-6 px-6 pb-6 pt-8">
-        <Card className="sidebar-upgrade p-6">
-          <div className="flex items-center gap-2 text-sm font-bold text-ink">
-            <Crown className="h-4 w-4 text-amber-500" />
-            Upgrade to Pro
-          </div>
-          <p className="mt-3 text-sm leading-6 text-soft">
-            Unlock all features and boost your productivity.
-          </p>
-          <PrimaryButton className="mt-5 w-full justify-center">
-            Upgrade Now
-          </PrimaryButton>
-        </Card>
-
+      <div className="sidebar-footer mt-auto space-y-3 px-6 pb-6 pt-8">
         <button
-          onClick={logout}
           className="flex w-full items-center gap-3 rounded-3xl border border-brand-100 px-4 py-4 text-left transition hover:border-brand-200"
         >
           <Avatar user={user} size="md" showStatus />
@@ -122,6 +116,14 @@ function Sidebar({ mobile, onClose }) {
             <div className="truncate font-bold text-ink">{user?.name}</div>
             <div className="truncate text-sm text-soft">{user?.jobTitle}</div>
           </div>
+        </button>
+        
+        <button
+          onClick={logout}
+          className="flex w-full items-center gap-3 rounded-2xl border border-red-100 bg-red-50/50 px-5 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100 hover:border-red-200"
+        >
+          <LogOut className="h-4 w-4" />
+          <span>Logout</span>
         </button>
       </div>
     </aside>
@@ -455,10 +457,18 @@ function QuickCreateModal({ open, onClose }) {
 export default function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, workspace, unreadNotifications, setUnreadNotifications } = useAuth();
+  const { user, workspace, unreadNotifications, setUnreadNotifications, isAdmin } = useAuth();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const navigation = useMemo(
+    () => [
+      ...baseNavigation.slice(0, -1),
+      ...(isAdmin ? [{ to: "/app/admin", label: "Admin", icon: ShieldCheck }] : []),
+      baseNavigation.at(-1)
+    ],
+    [isAdmin]
+  );
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["notifications"],

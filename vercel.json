@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "buildCommand": "npm install && npm run build",
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": "react",
+  "public": false,
+  "monorepo": true,
+  "monorepoRoot": "."
+}

@@ -16,8 +16,8 @@ export default function LoginPage() {
   const location = useLocation();
   const { login } = useAuth();
   const [form, setForm] = useState({
-    email: "emma@aurora.com",
-    password: "TaskPro123!"
+    email: "",
+    password: ""
   });
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -46,13 +46,8 @@ export default function LoginPage() {
             Welcome back to your team's command center.
           </div>
           <p className="mt-6 max-w-lg text-lg leading-8 text-white/80">
-            Use the seeded admin account to explore the full workspace instantly.
+            Sign in with your workspace account to manage projects, people, tasks, files, and reports.
           </p>
-          <div className="mt-10 rounded-[28px] border border-white/20 bg-white/10 p-6 backdrop-blur-md">
-            <p className="text-sm uppercase tracking-[0.3em] text-white/70">Demo Access</p>
-            <p className="mt-4 text-lg font-semibold">Email: `emma@aurora.com`</p>
-            <p className="mt-2 text-lg font-semibold">Password: `TaskPro123!`</p>
-          </div>
         </div>
         <div className="text-sm text-white/70">TaskPro Workspace Access</div>
       </div>
@@ -78,6 +73,7 @@ export default function LoginPage() {
                     setForm((current) => ({ ...current, email: event.target.value }))
                   }
                   className="pl-12"
+                  placeholder="you@company.com"
                 />
               </div>
             </Field>
@@ -92,6 +88,7 @@ export default function LoginPage() {
                     setForm((current) => ({ ...current, password: event.target.value }))
                   }
                   className="pl-12"
+                  placeholder="Enter your password"
                 />
               </div>
             </Field>

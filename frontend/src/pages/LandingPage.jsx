@@ -106,8 +106,8 @@ export default function LandingPage() {
                   <Play className="ml-1 h-5 w-5" />
                 </span>
                 <span>
-                  <span className="block text-xl font-semibold text-ink">Watch Demo</span>
-                  <span className="text-soft">2 min</span>
+                  <span className="block text-xl font-semibold text-ink">View Workflow</span>
+                  <span className="text-soft">Product tour</span>
                 </span>
               </button>
             </div>

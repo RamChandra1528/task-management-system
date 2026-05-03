@@ -132,6 +132,11 @@ export async function bootstrapWorkspace({ force = false } = {}) {
     return { seeded: false };
   }
 
+  const seedPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!seedPassword) {
+    throw new Error("SEED_ADMIN_PASSWORD is required before creating seed users");
+  }
+
   if (force) {
     await Promise.all([
       Notification.deleteMany({}),
@@ -420,7 +425,7 @@ export async function bootstrapWorkspace({ force = false } = {}) {
         team: teamMap[user.team]._id,
         name: user.name,
         email: user.email,
-        password: "TaskPro123!",
+        password: seedPassword,
         role: user.role,
         jobTitle: user.jobTitle,
         department: user.department,

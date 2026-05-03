@@ -18,7 +18,7 @@ export default function SignupPage() {
     name: "",
     email: "",
     password: "",
-    workspaceName: "Aurora Workspace"
+    workspaceName: ""
   });
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -104,6 +104,7 @@ export default function SignupPage() {
                       workspaceName: event.target.value
                     }))
                   }
+                  placeholder="Company workspace"
                 />
               </Field>
             </div>
@@ -140,8 +141,8 @@ export default function SignupPage() {
             One workspace for projects, tasks, conversations, and clarity.
           </div>
           <p className="mt-6 max-w-lg text-lg leading-8 text-soft">
-            New signups join the seeded workspace so you can immediately explore
-            the complete product experience with real API-backed data.
+            Create a private workspace with real API-backed projects, tasks, files,
+            reports, and access control.
           </p>
         </div>
         <div className="rounded-[30px] border border-brand-100 bg-white p-6 shadow-card">
@@ -151,7 +152,7 @@ export default function SignupPage() {
           <div className="mt-4 grid gap-4 text-soft">
             <div>JWT authentication and role-based access</div>
             <div>Projects, tasks, files, reports, and messaging</div>
-            <div>Seeded Aurora Workspace for immediate testing</div>
+            <div>Admin controls for users, teams, workspace data, and permissions</div>
           </div>
         </div>
       </div>
