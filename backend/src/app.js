@@ -23,6 +23,12 @@ dotenv.config();
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
+function normalizeOrigin(origin) {
+  return String(origin || "")
+    .trim()
+    .replace(/\/+$/, "");
+}
+
 export function createApp() {
   const app = express();
 
@@ -37,45 +43,44 @@ export function createApp() {
     next();
   });
 
-  const allowedOrigins = process.env.CLIENT_URL?.split(",").map((origin) => origin.trim()) || [];
-  
-  console.log("📝 CORS Configuration:");
+  const allowedOrigins =
+    process.env.CLIENT_URL?.split(",")
+      .map((origin) => normalizeOrigin(origin))
+      .filter(Boolean) || [];
+
+  console.log("CORS Configuration:");
   console.log("- Allowed origins from CLIENT_URL:", allowedOrigins);
-  
-  // Add common development and production domains
+
   const productionDomains = [
-    /^https:\/\/.*\.netlify\.app$/,      // Netlify deployments
-    /^https:\/\/.*\.vercel\.app$/,       // Vercel deployments
-    /^https:\/\/.*\.github\.dev$/,       // GitHub Codespaces
-    /^http:\/\/(localhost|127\.0\.0\.1):\d+$/ // Local development
+    /^https:\/\/.*\.netlify\.app$/,
+    /^https:\/\/.*\.vercel\.app$/,
+    /^https:\/\/.*\.github\.dev$/,
+    /^http:\/\/(localhost|127\.0\.0\.1):\d+$/
   ];
 
   app.use(
     cors({
       origin(origin, callback) {
-        console.log("🔍 CORS check for origin:", origin);
-        
+        console.log("CORS check for origin:", origin);
+
         if (!origin) {
-          console.log("✅ No origin (mobile/server request) - allowed");
           callback(null, true);
           return;
         }
 
-        // Check if origin is in allowed list
-        if (allowedOrigins.includes(origin)) {
-          console.log("✅ Origin in allowed list");
+        const normalizedOrigin = normalizeOrigin(origin);
+
+        if (allowedOrigins.includes(normalizedOrigin)) {
           callback(null, true);
           return;
         }
 
-        // Check if origin matches production patterns
-        if (productionDomains.some(pattern => pattern.test(origin))) {
-          console.log("✅ Origin matches production pattern");
+        if (productionDomains.some((pattern) => pattern.test(normalizedOrigin))) {
           callback(null, true);
           return;
         }
 
-        console.warn("❌ CORS blocked:", origin);
+        console.warn("Blocked by CORS:", normalizedOrigin);
         callback(new Error("Not allowed by CORS"));
       },
       credentials: true,
@@ -84,6 +89,7 @@ export function createApp() {
       optionsSuccessStatus: 200
     })
   );
+
   app.use(express.json({ limit: "8mb" }));
   app.use(express.urlencoded({ extended: true }));
   app.use(morgan("dev"));
